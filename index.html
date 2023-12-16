@@ -1,0 +1,3121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <style>
+        body{
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+        .checkbox {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0.01;
+        }
+        .checkbox__icon {
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            background: #c4c4c4;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .checkbox__icon::before {
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .checkbox:checked ~ .checkbox__icon::before {
+            left: 22px;
+        }
+        .checkbox:checked ~ .checkbox__icon {
+            background: #a70532;
+        }
+        .checkbox__text {
+            color: #6b7280;
+            font-size: 18px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 1;
+        }
+        .checkbox__text a {
+            color: inherit;
+            text-decoration: underline;
+        }
+        .form__checkbox{
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .select{
+            color: #6b7280;
+            font-size: 18px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        select{
+            border: 2px solid #a70532 !important;
+            border-radius: 10px;
+            padding: 2px 10px;
+            outline: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        select:focus, select:active{
+            border: 2px solid #a70532 !important;
+        }
+        button{
+            background: #a70532;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        button:hover{
+            background: #a70533e7;
+        }
+        button.disabled{
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .settings, .preview{
+            padding: 10px;
+        }
+        .preview{
+            display: flex;
+            flex-direction: column;
+        }
+        .passed, .test{
+            margin-bottom: 10px;
+            text-align: center;
+            border-radius: 10px;
+            border: 3px solid aqua;
+            padding: 10px 20px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .test{
+            border-color: aqua;
+        }
+        .test::before{
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            content: 'Начать тест!';
+            background: aqua;
+            opacity: 0;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .test:hover::before{
+            opacity: 1;
+        }
+        .passed{
+            border-color: green;
+        }
+        .passed::before{
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            content: 'Показать результаты!';
+            background: green;
+            opacity: 0;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .passed:hover::before{
+            opacity: 1;
+        }
+        .quest{
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            background: aqua;
+            padding: 10px;
+        }
+        .answer-item{
+            margin-bottom: 10px;
+            border: 2px solid aqua;
+            padding: 10px;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .answer-item::before{
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: aqua;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .answer-item.selected::before{
+            opacity: 0.2;
+        }
+        .answer-item.isTrue::before{
+            opacity: 0.2;
+            background: green;
+        }
+        .disabled{
+            pointer-events: none;
+        }
+        .container-answ{
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .m10{
+            margin: 10px;
+        }
+        .resul-answ{
+            margin: 10px;
+            border: 2px solid red;
+            padding: 10px;
+            border-radius: 15px;
+        }
+        .resul-answ.isTrue{
+            border-color: blue;
+        }
+        .resul-answ > *{
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main>
+            <div v-if="cuttentTab === 'TestPreview'" class="preview">
+                <div v-for="(test, index) in splitedTest"  :key="index">
+                    <div v-if="splitedTestResults[index].length > 0" @click="showTestResults(index)" class="passed">
+                        Тест пройден ({{showResultsCount(splitedTestResults[index])}}/{{splitedTestResults[index].length}})
+                    </div>
+                    <div v-else @click="showTest(index)" class="test">
+                        Тест {{index+1}}
+                        (Вопросов {{test.length}})
+                    </div>
+                </div>
+            </div>
+            <div v-if="cuttentTab === 'Test'">
+                <div v-for="(test, indexTest) in splitedTest[selectedTest]" :key="indexTest">
+                    <div v-if="indexTest === currentAnswer">
+                        <div class="quest">
+                            {{test.question}}
+                        </div>
+                        <div :class="{disabled: questionPassed}" class="container-answ">
+                            <span v-for="(answer, answerIndex) in test.answers" 
+                                :key="answerIndex" 
+                                class="answer-item"
+                                :class="{isTrue: questionPassed && showResults && answer.isCorrect, selected: answerSelectedIndex === answerIndex}" 
+                                @click="addAnswer(test.question, answer.answer, answer.isCorrect, test.answers, answerIndex)"
+                            >
+                                {{answer.answer}}
+                            </span>
+                        </div>
+                        <button v-if="(indexTest + 1) === splitedTest[selectedTest].length" :class="{disabled: !questionPassed}" @click="backToMenu()" class="m10">
+                            Завершить тест
+                        </button>
+                        <button v-else :class="{disabled: !questionPassed}" @click="nextQuest()" class="m10">
+                            Следующий вопрос
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div v-if="cuttentTab === 'ResultTest'">
+                <div v-for="result in splitedTestResults[showResultsTestNum]" :class="{isTrue: result.isCorrect}" class="resul-answ">
+                    <div class="result-q">
+                        Вопрос: {{result.question}}
+                    </div>
+                    <div class="result-y">
+                        Твой ответ: {{result.answer}}
+                    </div>
+                    <div>
+                        Правельный ответ: 
+                        <span v-for="answ in result.answers">
+                            <span v-if="answ.isCorrect">{{answ.answer}}</span>
+                        </span>
+                    </div>
+                </div>
+                <button @click="backToMenu()">Вернуться к тестам</button>
+            </div>
+            <div v-if="cuttentTab === 'Settings'" class="settings">
+                <h1>Настройки теста</h1>
+                <label class="form__checkbox">
+                    <input type="checkbox" v-model="questionsRandom" class="checkbox">
+                    <div class="checkbox__icon"></div>
+                    <div class="checkbox__text">
+                        Размешать список вопросов
+                    </div>
+                </label>
+                <label class="form__checkbox">
+                    <input type="checkbox" v-model="answersRandom" class="checkbox">
+                    <div class="checkbox__icon"></div>
+                    <div class="checkbox__text">
+                        Размешать список ответов
+                    </div>
+                </label>
+                <label class="form__checkbox">
+                    <input type="checkbox" v-model="showResults" class="checkbox">
+                    <div class="checkbox__icon"></div>
+                    <div class="checkbox__text">
+                        Показывать результат сразу при ответе
+                    </div>
+                </label>
+                <div class="select">
+                    Сколько вопросов показывать в одном тесте 
+                    <select name="" id="" v-model="splitCounts">
+                        <option value="180">180</option>
+                        <option value="90">90</option>
+                        <option value="45">45</option>
+                        <option value="30">30</option>
+                        <option value="18">18</option>
+                    </select>
+                </div>
+                
+                <button @click="startTest">Начать тестирование</button>
+            </div>
+        </main>
+    </div>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.8/dist/vue.js"></script>
+    <script>
+        var vm = new Vue({
+            el: '#app',
+            data: {
+                cuttentTab: 'Settings',
+                answersRandom: true,
+                questionsRandom: true,
+                splitCounts: 180,
+                showResults: false,
+                splitedTest: [],
+                splitedTestResults: [],
+                selectedTest: 0,
+                currentAnswer: 0,
+                answerSelectedIndex: null,
+                questionPassed: false,
+                showResultsTestNum: 0,
+                test: [{
+                    question: `Choose the right variant. She can type without looking at the _________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Keyboard`
+                    }, {
+                        isCorrect: false,
+                        answer: `Search`
+                    }, {
+                        isCorrect: false,
+                        answer: `Delete`
+                    }, {
+                        isCorrect: false,
+                        answer: `Download`
+                    }]
+                }, {
+                    question: `Choose the right variant. I don’t know the _____ of my name`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `meaning`
+                    }, {
+                        isCorrect: false,
+                        answer: `sign`
+                    }, {
+                        isCorrect: false,
+                        answer: `feature`
+                    }, {
+                        isCorrect: false,
+                        answer: `type`
+                    }]
+                }, {
+                    question: `Choose the right variant. My daughter hates ______ alone`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `playing`
+                    }, {
+                        isCorrect: false,
+                        answer: `played`
+                    }, {
+                        isCorrect: false,
+                        answer: `plays`
+                    }, {
+                        isCorrect: false,
+                        answer: `play`
+                    }]
+                }, {
+                    question: `Choose the right variant. A.\: It’s a secret. B.\: I ____ anyone. I promise`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `won’t tell`
+                    }, {
+                        isCorrect: false,
+                        answer: `tells`
+                    }, {
+                        isCorrect: false,
+                        answer: `told`
+                    }, {
+                        isCorrect: false,
+                        answer: `say`
+                    }]
+                }, {
+                    question: `Choose the right variant. The cars are parked_________ the road`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `along`
+                    }, {
+                        isCorrect: false,
+                        answer: `through`
+                    }, {
+                        isCorrect: false,
+                        answer: `over`
+                    }, {
+                        isCorrect: false,
+                        answer: `with`
+                    }]
+                }, {
+                    question: `Choose the right variant. _____ is an animal with a long neck`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `giraffe`
+                    }, {
+                        isCorrect: false,
+                        answer: `wolf`
+                    }, {
+                        isCorrect: false,
+                        answer: `tiger`
+                    }, {
+                        isCorrect: false,
+                        answer: `monkey`
+                    }]
+                }, {
+                    question: `Choose the right variant. For more information, please visit our website ______ details are available`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `where`
+                    }, {
+                        isCorrect: false,
+                        answer: `who`
+                    }, {
+                        isCorrect: false,
+                        answer: `whom`
+                    }, {
+                        isCorrect: false,
+                        answer: `which`
+                    }]
+                }, {
+                    question: `She couldn't remember _ she put her keys`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `where`
+                    }, {
+                        isCorrect: false,
+                        answer: `how`
+                    }, {
+                        isCorrect: false,
+                        answer: `what`
+                    }, {
+                        isCorrect: false,
+                        answer: `when`
+                    }]
+                }, {
+                    question: `Choose the right variant. My friends _____ me ‘Chip’`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `call`
+                    }, {
+                        isCorrect: false,
+                        answer: `find`
+                    }, {
+                        isCorrect: false,
+                        answer: `ask`
+                    }, {
+                        isCorrect: false,
+                        answer: `identify`
+                    }]
+                }, {
+                    question: `Choose the right variant. We like _____ lunch in the garden`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `having`
+                    }, {
+                        isCorrect: false,
+                        answer: `has`
+                    }, {
+                        isCorrect: false,
+                        answer: `to having`
+                    }, {
+                        isCorrect: false,
+                        answer: `had`
+                    }]
+                }, {
+                    question: `Choose the right variant. Fred is ill today. He _____to school`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `won't go`
+                    }, {
+                        isCorrect: false,
+                        answer: `don’t go`
+                    }, {
+                        isCorrect: false,
+                        answer: `aren’t going`
+                    }, {
+                        isCorrect: false,
+                        answer: `went`
+                    }]
+                }, {
+                    question: `Choose the right variant\: I think that good ________ is above wealth`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `health`
+                    }, {
+                        isCorrect: false,
+                        answer: `salary`
+                    }, {
+                        isCorrect: false,
+                        answer: `job`
+                    }, {
+                        isCorrect: false,
+                        answer: `trip`
+                    }]
+                }, {
+                    question: `Choose the right variant. If I were an animal, I ______ be a tiger`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `would`
+                    }, {
+                        isCorrect: false,
+                        answer: `had`
+                    }, {
+                        isCorrect: false,
+                        answer: `will`
+                    }, {
+                        isCorrect: false,
+                        answer: `have`
+                    }]
+                }, {
+                    question: `Choose the right variant. You don't have to buy books. You can go to the library and ________ books for a specified amount of time.`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `borrow`
+                    }, {
+                        isCorrect: false,
+                        answer: `mediate`
+                    }, {
+                        isCorrect: false,
+                        answer: `search`
+                    }, {
+                        isCorrect: false,
+                        answer: `shop`
+                    }]
+                }, {
+                    question: `Choose the right variant. The teacher asked, '_____ did you come up with that idea?'`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `How`
+                    }, {
+                        isCorrect: false,
+                        answer: `When`
+                    }, {
+                        isCorrect: false,
+                        answer: `What`
+                    }, {
+                        isCorrect: false,
+                        answer: `Where`
+                    }]
+                }, {
+                    question: `Choose the right variant. If we____ our homework, our teacher will be happy`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `do`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn't do`
+                    }, {
+                        isCorrect: false,
+                        answer: `wouldn't do`
+                    }, {
+                        isCorrect: false,
+                        answer: `didn't do`
+                    }]
+                }, {
+                    question: `Choose the right variant. A place where students can read and borrow books`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Library`
+                    }, {
+                        isCorrect: false,
+                        answer: `classroom`
+                    }, {
+                        isCorrect: false,
+                        answer: `hall`
+                    }, {
+                        isCorrect: false,
+                        answer: `canteen`
+                    }]
+                }, {
+                    question: `Choose the right variant. Anny\: _____ do you get to college? Bob\: On foot`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `How`
+                    }, {
+                        isCorrect: false,
+                        answer: `When`
+                    }, {
+                        isCorrect: false,
+                        answer: `What`
+                    }, {
+                        isCorrect: false,
+                        answer: `Where`
+                    }]
+                }, {
+                    question: `Choose the right variant. They usually______ a holiday at a travel agent’s`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `book`
+                    }, {
+                        isCorrect: false,
+                        answer: `sell`
+                    }, {
+                        isCorrect: false,
+                        answer: `fill in`
+                    }, {
+                        isCorrect: false,
+                        answer: `put in`
+                    }]
+                }, {
+                    question: `Choose the right variant. Hannah doesn’t work for anybody- she is _______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `self-employed`
+                    }, {
+                        isCorrect: false,
+                        answer: `optimist`
+                    }, {
+                        isCorrect: false,
+                        answer: `government worker`
+                    }, {
+                        isCorrect: false,
+                        answer: `guest`
+                    }]
+                }, {
+                    question: `Choose the right variant. She is always complaining about her _______. She is often ill`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `sickness`
+                    }, {
+                        isCorrect: false,
+                        answer: `happiness`
+                    }, {
+                        isCorrect: false,
+                        answer: `success`
+                    }, {
+                        isCorrect: false,
+                        answer: `luck`
+                    }]
+                }, {
+                    question: `Choose the right variant. If I ______ you, I wouldn't tell anybody about this`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `were`
+                    }, {
+                        isCorrect: false,
+                        answer: `am`
+                    }, {
+                        isCorrect: false,
+                        answer: `will be`
+                    }, {
+                        isCorrect: false,
+                        answer: `had been`
+                    }]
+                }, {
+                    question: `Choose the right variant. A person who works at a library is called a _________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `librarian`
+                    }, {
+                        isCorrect: false,
+                        answer: `book keeper`
+                    }, {
+                        isCorrect: false,
+                        answer: `shop owner`
+                    }, {
+                        isCorrect: false,
+                        answer: `mortician`
+                    }]
+                }, {
+                    question: `I don't understand _ you're saying. Can you explain it again?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `what`
+                    }, {
+                        isCorrect: false,
+                        answer: `why`
+                    }, {
+                        isCorrect: false,
+                        answer: `when`
+                    }, {
+                        isCorrect: false,
+                        answer: `where`
+                    }]
+                }, {
+                    question: `Choose the right variant. ‘I learn English in my free time.’`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `When do you learn English?`
+                    }, {
+                        isCorrect: false,
+                        answer: `Why do you learn English?`
+                    }, {
+                        isCorrect: false,
+                        answer: `Who do you learn English with?`
+                    }, {
+                        isCorrect: false,
+                        answer: `How well do you know English?`
+                    }]
+                }, {
+                    question: `Choose the right variant. Find out the odd word`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `study`
+                    }, {
+                        isCorrect: false,
+                        answer: `journey`
+                    }, {
+                        isCorrect: false,
+                        answer: `voyage`
+                    }, {
+                        isCorrect: false,
+                        answer: `trip`
+                    }]
+                }, {
+                    question: `Choose the right variant. I don’t like working every day. I want a _____ job`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `part time`
+                    }, {
+                        isCorrect: false,
+                        answer: `full time`
+                    }, {
+                        isCorrect: false,
+                        answer: `extra`
+                    }, {
+                        isCorrect: false,
+                        answer: `low -paid`
+                    }]
+                }, {
+                    question: `Choose the right variant. A babysitter looks _____ the children when their mother is at work`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `after`
+                    }, {
+                        isCorrect: false,
+                        answer: `out`
+                    }, {
+                        isCorrect: false,
+                        answer: `into`
+                    }, {
+                        isCorrect: false,
+                        answer: `before`
+                    }]
+                }, {
+                    question: `Choose the right variant. People prepare turkey and puddings on that day`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Thanksgiving day`
+                    }, {
+                        isCorrect: false,
+                        answer: `Women’s day`
+                    }, {
+                        isCorrect: false,
+                        answer: `Independence Day`
+                    }, {
+                        isCorrect: false,
+                        answer: `Valentine’s day`
+                    }]
+                }, {
+                    question: `Choose the right variant. It’s late. I ______ go now`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `must`
+                    }, {
+                        isCorrect: false,
+                        answer: `had to`
+                    }, {
+                        isCorrect: false,
+                        answer: `has to`
+                    }, {
+                        isCorrect: false,
+                        answer: `would`
+                    }]
+                }, {
+                    question: `Sam\: _ did you buy for your sister's birthday? Alex\: A book she wanted`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `What`
+                    }, {
+                        isCorrect: false,
+                        answer: `When`
+                    }, {
+                        isCorrect: false,
+                        answer: `How`
+                    }, {
+                        isCorrect: false,
+                        answer: `Where`
+                    }]
+                }, {
+                    question: `Choose the right variant. He is sleepy. He _____ drink a coffee`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Should`
+                    }, {
+                        isCorrect: false,
+                        answer: `Cry`
+                    }, {
+                        isCorrect: false,
+                        answer: `Can’t be`
+                    }, {
+                        isCorrect: false,
+                        answer: `Hadn’t to`
+                    }]
+                }, {
+                    question: `Choose the right variant`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Paris is the most beautiful city in Europe`
+                    }, {
+                        isCorrect: false,
+                        answer: `Paris is the tallest city in Europe`
+                    }, {
+                        isCorrect: false,
+                        answer: `Paris is the more beautiful city in Europe`
+                    }, {
+                        isCorrect: false,
+                        answer: `Paris is the most beautifully city in Europe`
+                    }]
+                }, {
+                    question: `Choose the right variant. My sister thinks she's ____________ than me, but I don't agree!`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `More intelligent`
+                    }, {
+                        isCorrect: false,
+                        answer: `Intelligent`
+                    }, {
+                        isCorrect: false,
+                        answer: `An intelligent`
+                    }, {
+                        isCorrect: false,
+                        answer: `Not intelligent`
+                    }]
+                }, {
+                    question: `Choose the right variant. Your aunt’s and uncle’s children are ______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `cousins`
+                    }, {
+                        isCorrect: false,
+                        answer: `nephews`
+                    }, {
+                        isCorrect: false,
+                        answer: `nieces`
+                    }, {
+                        isCorrect: false,
+                        answer: `twins`
+                    }]
+                }, {
+                    question: `Choose the right variant. I think it_______ rain`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `is going to`
+                    }, {
+                        isCorrect: false,
+                        answer: `to go`
+                    }, {
+                        isCorrect: false,
+                        answer: `goes to`
+                    }, {
+                        isCorrect: false,
+                        answer: `have been going`
+                    }]
+                }, {
+                    question: `Choose the right variant. You _________ lose a bit of weight. You’re getting fatter`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `should`
+                    }, {
+                        isCorrect: false,
+                        answer: `could to`
+                    }, {
+                        isCorrect: false,
+                        answer: `may to`
+                    }, {
+                        isCorrect: false,
+                        answer: `shouldn’t`
+                    }]
+                }, {
+                    question: `Choose the right variant. He fell _____and hurt his leg`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `down`
+                    }, {
+                        isCorrect: false,
+                        answer: `up`
+                    }, {
+                        isCorrect: false,
+                        answer: `on`
+                    }, {
+                        isCorrect: false,
+                        answer: `in`
+                    }]
+                }, {
+                    question: `Choose the right variant. Holiday which is celebrated on the 22nd of March`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Nauryz`
+                    }, {
+                        isCorrect: false,
+                        answer: `Women’s day`
+                    }, {
+                        isCorrect: false,
+                        answer: `Independence Day`
+                    }, {
+                        isCorrect: false,
+                        answer: `Easter day`
+                    }]
+                }, {
+                    question: `Choose the right word to form a collocation\: private ______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `school`
+                    }, {
+                        isCorrect: false,
+                        answer: `goal`
+                    }, {
+                        isCorrect: false,
+                        answer: `education`
+                    }, {
+                        isCorrect: false,
+                        answer: `language`
+                    }]
+                }, {
+                    question: `Choose the right variant. Give the form of male ‘niece’`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `nephew`
+                    }, {
+                        isCorrect: false,
+                        answer: `grandson`
+                    }, {
+                        isCorrect: false,
+                        answer: `stepfather`
+                    }, {
+                        isCorrect: false,
+                        answer: `uncle`
+                    }]
+                }, {
+                    question: `Choose the right variant. Hurry up! We are going ____ late`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `to be`
+                    }, {
+                        isCorrect: false,
+                        answer: `been`
+                    }, {
+                        isCorrect: false,
+                        answer: `being to`
+                    }, {
+                        isCorrect: false,
+                        answer: `are`
+                    }]
+                }, {
+                    question: `Choose the right variant. You _______ play computer games till midnight`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `shouldn’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `ought to`
+                    }, {
+                        isCorrect: false,
+                        answer: `must`
+                    }, {
+                        isCorrect: false,
+                        answer: `should to`
+                    }]
+                }, {
+                    question: `Choose the right variant. _______ is very bad for our health`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `fast food`
+                    }, {
+                        isCorrect: false,
+                        answer: `dairy products`
+                    }, {
+                        isCorrect: false,
+                        answer: `porridge`
+                    }, {
+                        isCorrect: false,
+                        answer: `fish`
+                    }]
+                }, {
+                    question: `Choose the right variant. Sue ______ to live in Italy, it’s her dream`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `would like`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `want`
+                    }, {
+                        isCorrect: false,
+                        answer: `would to like`
+                    }]
+                }, {
+                    question: `Choose the right variant\: Have you ….. been to a Zara store?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `ever`
+                    }, {
+                        isCorrect: false,
+                        answer: `already`
+                    }, {
+                        isCorrect: false,
+                        answer: `just`
+                    }, {
+                        isCorrect: false,
+                        answer: `sometimes`
+                    }]
+                }, {
+                    question: `Choose the right variant. What are the advantages of regular exercise?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `It can improve cardiovascular health, increase energy levels, and enhance mood`
+                    }, {
+                        isCorrect: false,
+                        answer: `It can lead to a sedentary lifestyle`
+                    }, {
+                        isCorrect: false,
+                        answer: `It may have negative effects on mental health`
+                    }, {
+                        isCorrect: false,
+                        answer: `It discourages social interactions`
+                    }]
+                }, {
+                    question: `Choose the right variant. ___ can lead to a more balanced and healthy lifestyle`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Regular exercise`
+                    }, {
+                        isCorrect: false,
+                        answer: `Watching TV for hours`
+                    }, {
+                        isCorrect: false,
+                        answer: `Skipping meals regularly`
+                    }, {
+                        isCorrect: false,
+                        answer: `Excessive caffeine intake`
+                    }]
+                }, {
+                    question: `Choose the right variant. You can turn the radio off. I _____ to it`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `am not listening`
+                    }, {
+                        isCorrect: false,
+                        answer: `am listening`
+                    }, {
+                        isCorrect: false,
+                        answer: `is not listening`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn’t listen`
+                    }]
+                }, {
+                    question: `Choose the right variant\: Find out the odd word`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `books`
+                    }, {
+                        isCorrect: false,
+                        answer: `TV shows`
+                    }, {
+                        isCorrect: false,
+                        answer: `cartoons`
+                    }, {
+                        isCorrect: false,
+                        answer: `channels`
+                    }]
+                }, {
+                    question: `Choose the right variant. I usually ________ formal clothes at work`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `wear`
+                    }, {
+                        isCorrect: false,
+                        answer: `try on`
+                    }, {
+                        isCorrect: false,
+                        answer: `put off`
+                    }, {
+                        isCorrect: false,
+                        answer: `take out`
+                    }]
+                }, {
+                    question: `Choose the right variant. I love all kinds of ________ like milk, yoghurt, kefir and cheese`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `dairy products`
+                    }, {
+                        isCorrect: false,
+                        answer: `fast food`
+                    }, {
+                        isCorrect: false,
+                        answer: `vegetables`
+                    }, {
+                        isCorrect: false,
+                        answer: `meat products`
+                    }]
+                }, {
+                    question: `Choose the right variant. I ______to work as a teacher. It’s a stressful job`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `wouldn't like`
+                    }, {
+                        isCorrect: false,
+                        answer: `wants`
+                    }, {
+                        isCorrect: false,
+                        answer: `would to like`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn’t`
+                    }]
+                }, {
+                    question: `Choose the word with general meaning\:`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `jewelry`
+                    }, {
+                        isCorrect: false,
+                        answer: `earrings`
+                    }, {
+                        isCorrect: false,
+                        answer: `necklace`
+                    }, {
+                        isCorrect: false,
+                        answer: `ring`
+                    }]
+                }, {
+                    question: `Choose the right variant. In this photo my sister ______ a white dress`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `is wearing`
+                    }, {
+                        isCorrect: false,
+                        answer: `wearing`
+                    }, {
+                        isCorrect: false,
+                        answer: `wear`
+                    }, {
+                        isCorrect: false,
+                        answer: `are wearing`
+                    }]
+                }, {
+                    question: `Choose the right variant. I really think a lot of our programmes are _______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `entertaining`
+                    }, {
+                        isCorrect: false,
+                        answer: `tasty`
+                    }, {
+                        isCorrect: false,
+                        answer: `patient`
+                    }, {
+                        isCorrect: false,
+                        answer: `heavy`
+                    }]
+                }, {
+                    question: `Choose the right variant. When it’s cold I _________ my leather coat`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `put on`
+                    }, {
+                        isCorrect: false,
+                        answer: `take after`
+                    }, {
+                        isCorrect: false,
+                        answer: `give up`
+                    }, {
+                        isCorrect: false,
+                        answer: `get on`
+                    }]
+                }, {
+                    question: `Choose the right variant. Your father‘s not very fit. He doesn’t do _____exercise`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `enough`
+                    }, {
+                        isCorrect: false,
+                        answer: `not enough`
+                    }, {
+                        isCorrect: false,
+                        answer: `many`
+                    }, {
+                        isCorrect: false,
+                        answer: `too many`
+                    }]
+                }, {
+                    question: `Choose the right variant. _____ is the Queen’s official residence`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Buckingham Palace`
+                    }, {
+                        isCorrect: false,
+                        answer: `Big Ben`
+                    }, {
+                        isCorrect: false,
+                        answer: `London eye`
+                    }, {
+                        isCorrect: false,
+                        answer: `Tower bridge`
+                    }]
+                }, {
+                    question: `We have got new computer software in our office. I haven’t learnt how ….. it yet`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `to use`
+                    }, {
+                        isCorrect: false,
+                        answer: `to live`
+                    }, {
+                        isCorrect: false,
+                        answer: `to get`
+                    }, {
+                        isCorrect: false,
+                        answer: `to tell`
+                    }]
+                }, {
+                    question: `Choose the right variant. _ is a popular outdoor activity during the summer months`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Swimming`
+                    }, {
+                        isCorrect: false,
+                        answer: `Skiing`
+                    }, {
+                        isCorrect: false,
+                        answer: `Ice skating`
+                    }, {
+                        isCorrect: false,
+                        answer: `Snowboarding`
+                    }]
+                }, {
+                    question: `Choose the right variant. The _ of the novel kept readers guessing until the last chapter`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `beginning`
+                    }, {
+                        isCorrect: false,
+                        answer: `actor`
+                    }, {
+                        isCorrect: false,
+                        answer: `plot`
+                    }, {
+                        isCorrect: false,
+                        answer: `ending`
+                    }]
+                }, {
+                    question: `Choose the right variant. I _____ well with my friends`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `get on`
+                    }, {
+                        isCorrect: false,
+                        answer: `get up`
+                    }, {
+                        isCorrect: false,
+                        answer: `get off`
+                    }, {
+                        isCorrect: false,
+                        answer: `get`
+                    }]
+                }, {
+                    question: `Choose the right variant. ______ Asia is bigger than _____ Europe`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `___, ___`
+                    }, {
+                        isCorrect: false,
+                        answer: `a, the`
+                    }, {
+                        isCorrect: false,
+                        answer: `The, the`
+                    }, {
+                        isCorrect: false,
+                        answer: `___, a`
+                    }]
+                }, {
+                    question: `Choose the right variant. I’ve never _________ him in a suit and tie`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `seen`
+                    }, {
+                        isCorrect: false,
+                        answer: `see`
+                    }, {
+                        isCorrect: false,
+                        answer: `saw`
+                    }, {
+                        isCorrect: false,
+                        answer: `sawn`
+                    }]
+                }, {
+                    question: `Choose the right variant. You eat _____ red meat. It isn’t good for you`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `too much`
+                    }, {
+                        isCorrect: false,
+                        answer: `not enough`
+                    }, {
+                        isCorrect: false,
+                        answer: `too many`
+                    }, {
+                        isCorrect: false,
+                        answer: `many`
+                    }]
+                }, {
+                    question: `Choose the right variant. What festival is held on City’s Day in Almaty?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Apple Fest`
+                    }, {
+                        isCorrect: false,
+                        answer: `La Tomatino`
+                    }, {
+                        isCorrect: false,
+                        answer: `Night of the Radishes`
+                    }, {
+                        isCorrect: false,
+                        answer: `Carnaval`
+                    }]
+                }, {
+                    question: `Match the word “download” with suiatable word combination\:`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `a file or a document`
+                    }, {
+                        isCorrect: false,
+                        answer: `digital camera`
+                    }, {
+                        isCorrect: false,
+                        answer: `keyboard`
+                    }, {
+                        isCorrect: false,
+                        answer: `social network`
+                    }]
+                }, {
+                    question: `Choose the right variant. Fred is always interested_____ politics`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `in`
+                    }, {
+                        isCorrect: false,
+                        answer: `at`
+                    }, {
+                        isCorrect: false,
+                        answer: `on`
+                    }, {
+                        isCorrect: false,
+                        answer: `of`
+                    }]
+                }, {
+                    question: `Choose the right variant. ______ Mississippi river is in ____ United States`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `the, the`
+                    }, {
+                        isCorrect: false,
+                        answer: `A, the`
+                    }, {
+                        isCorrect: false,
+                        answer: `-, the`
+                    }, {
+                        isCorrect: false,
+                        answer: `the, a`
+                    }]
+                }, {
+                    question: `Choose the right variant. __________ ever been to a Zara shop?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `have you`
+                    }, {
+                        isCorrect: false,
+                        answer: `do you`
+                    }, {
+                        isCorrect: false,
+                        answer: `did you`
+                    }, {
+                        isCorrect: false,
+                        answer: `does you English`
+                    }]
+                }, {
+                    question: `Choose the right variant. Healthy way of life includes\:`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `keeping fit`
+                    }, {
+                        isCorrect: false,
+                        answer: `smoking`
+                    }, {
+                        isCorrect: false,
+                        answer: `drinking alcohol`
+                    }, {
+                        isCorrect: false,
+                        answer: `eating junk food`
+                    }]
+                }, {
+                    question: `Choose the right variant. Put the correct adjective. As _____ as gold`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `good`
+                    }, {
+                        isCorrect: false,
+                        answer: `better`
+                    }, {
+                        isCorrect: false,
+                        answer: `best`
+                    }, {
+                        isCorrect: false,
+                        answer: `the best`
+                    }]
+                }, {
+                    question: `Choose the right variant\: I enjoy ….. in the garden`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `walking`
+                    }, {
+                        isCorrect: false,
+                        answer: `walks`
+                    }, {
+                        isCorrect: false,
+                        answer: `to walk`
+                    }, {
+                        isCorrect: false,
+                        answer: `walked`
+                    }]
+                }, {
+                    question: `Choose the right variant. __ can have a positive impact on mental well-being`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Spending time in nature`
+                    }, {
+                        isCorrect: false,
+                        answer: `Chronic stress`
+                    }, {
+                        isCorrect: false,
+                        answer: `Isolation`
+                    }, {
+                        isCorrect: false,
+                        answer: `Sedentary lifestyle`
+                    }]
+                }, {
+                    question: `Choose the right variant. _ is an essential skill in today's rapidly changing world`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Adaptability`
+                    }, {
+                        isCorrect: false,
+                        answer: `Ignorance`
+                    }, {
+                        isCorrect: false,
+                        answer: `Stubbornness`
+                    }, {
+                        isCorrect: false,
+                        answer: `Indifference`
+                    }]
+                }, {
+                    question: `Choose the right variant. I know he is going to be successful. He is very_______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `ambitious`
+                    }, {
+                        isCorrect: false,
+                        answer: `lazy`
+                    }, {
+                        isCorrect: false,
+                        answer: `sensitive`
+                    }, {
+                        isCorrect: false,
+                        answer: `shy`
+                    }]
+                }, {
+                    question: `Choose the right variant. “Sherlock Holmes” is a ______ book by Arthur Conan Doyle`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `detective`
+                    }, {
+                        isCorrect: false,
+                        answer: `fantastic`
+                    }, {
+                        isCorrect: false,
+                        answer: `poem`
+                    }, {
+                        isCorrect: false,
+                        answer: `science fiction`
+                    }]
+                }, {
+                    question: `Choose the right variant. I always ________ before breakfast`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `get dressed`
+                    }, {
+                        isCorrect: false,
+                        answer: `get ill`
+                    }, {
+                        isCorrect: false,
+                        answer: `get changed`
+                    }, {
+                        isCorrect: false,
+                        answer: `get sad`
+                    }]
+                }, {
+                    question: `Choose the right variant. Dancing, doing martial arts, walking and gardening are ______ activities`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `physical`
+                    }, {
+                        isCorrect: false,
+                        answer: `mental`
+                    }, {
+                        isCorrect: false,
+                        answer: `art`
+                    }, {
+                        isCorrect: false,
+                        answer: `political`
+                    }]
+                }, {
+                    question: `Choose the right variant. Almaty is ______ than Astana`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `noisier`
+                    }, {
+                        isCorrect: false,
+                        answer: `noisy`
+                    }, {
+                        isCorrect: false,
+                        answer: `the noisiest`
+                    }, {
+                        isCorrect: false,
+                        answer: `more noisy`
+                    }]
+                }, {
+                    question: `Choose the sentences halves\: If you don‘t take a map ___________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `you will get lost`
+                    }, {
+                        isCorrect: false,
+                        answer: `you will miss the bus`
+                    }, {
+                        isCorrect: false,
+                        answer: `we will stop and have lunch`
+                    }, {
+                        isCorrect: false,
+                        answer: `you won‘t pass the exam`
+                    }]
+                }, {
+                    question: `Choose the right variant. Write the opposite adjective\: talkative`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `quiet`
+                    }, {
+                        isCorrect: false,
+                        answer: `mean`
+                    }, {
+                        isCorrect: false,
+                        answer: `unfriendly`
+                    }, {
+                        isCorrect: false,
+                        answer: `lazy`
+                    }]
+                }, {
+                    question: `Choose the right variant. The students usually ______ books from the library`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `take`
+                    }, {
+                        isCorrect: false,
+                        answer: `lend`
+                    }, {
+                        isCorrect: false,
+                        answer: `give`
+                    }, {
+                        isCorrect: false,
+                        answer: `leave`
+                    }]
+                }, {
+                    question: `Choose the right variant. I like ___________ new clothes`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `trying on`
+                    }, {
+                        isCorrect: false,
+                        answer: `suit`
+                    }, {
+                        isCorrect: false,
+                        answer: `taking off`
+                    }, {
+                        isCorrect: false,
+                        answer: `fit`
+                    }]
+                }, {
+                    question: `Choose the right variant. I _____ have long hair when I was at school`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `used to`
+                    }, {
+                        isCorrect: false,
+                        answer: `use to`
+                    }, {
+                        isCorrect: false,
+                        answer: `didn’t used to`
+                    }, {
+                        isCorrect: false,
+                        answer: `don’tused to`
+                    }]
+                }, {
+                    question: `Choose the right variant. London is famous for its ______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `double-decker buses`
+                    }, {
+                        isCorrect: false,
+                        answer: `perfume`
+                    }, {
+                        isCorrect: false,
+                        answer: `spaghetti`
+                    }, {
+                        isCorrect: false,
+                        answer: `Eiffel Tower`
+                    }]
+                }, {
+                    question: `Choose the right variant\: Find out the odd word`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Iron`
+                    }, {
+                        isCorrect: false,
+                        answer: `North America`
+                    }, {
+                        isCorrect: false,
+                        answer: `City`
+                    }, {
+                        isCorrect: false,
+                        answer: `Mexico`
+                    }]
+                }, {
+                    question: `Choose the right variant`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Is Nick drawing cats?`
+                    }, {
+                        isCorrect: false,
+                        answer: `Nick is drawing cats?`
+                    }, {
+                        isCorrect: false,
+                        answer: `Is Nick cats drawing?`
+                    }, {
+                        isCorrect: false,
+                        answer: `Nick drawing is cats`
+                    }]
+                }, {
+                    question: `Choose the right variant. Could you speak _________, please? I don’t understand you`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `more slowly`
+                    }, {
+                        isCorrect: false,
+                        answer: `slowlier`
+                    }, {
+                        isCorrect: false,
+                        answer: `most slowly`
+                    }, {
+                        isCorrect: false,
+                        answer: `more slowly than`
+                    }]
+                }, {
+                    question: `Choose the right variant. _____ she cook breakfast every morning?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `does`
+                    }, {
+                        isCorrect: false,
+                        answer: `do`
+                    }, {
+                        isCorrect: false,
+                        answer: `were`
+                    }, {
+                        isCorrect: false,
+                        answer: `was`
+                    }]
+                }, {
+                    question: `Choose the right variant. There is a fax machine at the front desk, _____ can send and receive faxes`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `which`
+                    }, {
+                        isCorrect: false,
+                        answer: `who`
+                    }, {
+                        isCorrect: false,
+                        answer: `where`
+                    }, {
+                        isCorrect: false,
+                        answer: `when`
+                    }]
+                }, {
+                    question: `Choose the right variant. I’ve _______ cleaned the floor. It’s wet`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `just`
+                    }, {
+                        isCorrect: false,
+                        answer: `never`
+                    }, {
+                        isCorrect: false,
+                        answer: `seldom`
+                    }, {
+                        isCorrect: false,
+                        answer: `yet`
+                    }]
+                }, {
+                    question: `Choose the right variant. Every weekend we __________ drive out of town`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `used to`
+                    }, {
+                        isCorrect: false,
+                        answer: `uses to`
+                    }, {
+                        isCorrect: false,
+                        answer: `to used`
+                    }, {
+                        isCorrect: false,
+                        answer: `to use to`
+                    }]
+                }, {
+                    question: `Choose the right variant. What’s the _______ city you’ve ever seen?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `most beautiful`
+                    }, {
+                        isCorrect: false,
+                        answer: `more beautiful`
+                    }, {
+                        isCorrect: false,
+                        answer: `beautifulness`
+                    }, {
+                        isCorrect: false,
+                        answer: `beautiful`
+                    }]
+                }, {
+                    question: `Put the verbs into correct form\: If I knew his number,____________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `I would phone him`
+                    }, {
+                        isCorrect: false,
+                        answer: `would phone her`
+                    }, {
+                        isCorrect: false,
+                        answer: `I would like some tea`
+                    }, {
+                        isCorrect: false,
+                        answer: `I would sit down`
+                    }]
+                }, {
+                    question: `Choose the right variant. I (not/understand) ____ that man because I don’t know English`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `don’t understand`
+                    }, {
+                        isCorrect: false,
+                        answer: `not understand`
+                    }, {
+                        isCorrect: false,
+                        answer: `not understood`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn’t understand`
+                    }]
+                }, {
+                    question: `Choose the right variant. The clock is the thing ______ tells the time`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `which`
+                    }, {
+                        isCorrect: false,
+                        answer: `where`
+                    }, {
+                        isCorrect: false,
+                        answer: `who`
+                    }, {
+                        isCorrect: false,
+                        answer: `when`
+                    }]
+                }, {
+                    question: `Choose the right variant. You haven’t done the washing up _________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `yet`
+                    }, {
+                        isCorrect: false,
+                        answer: `just`
+                    }, {
+                        isCorrect: false,
+                        answer: `already`
+                    }, {
+                        isCorrect: false,
+                        answer: `seldom`
+                    }]
+                }, {
+                    question: `Choose the right variant. Anybody who has a small baby uses them`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `disposable nappies`
+                    }, {
+                        isCorrect: false,
+                        answer: `dish washer`
+                    }, {
+                        isCorrect: false,
+                        answer: `vacuum cleaner`
+                    }, {
+                        isCorrect: false,
+                        answer: `Tipp-Ex`
+                    }]
+                }, {
+                    question: `Choose the right variant. New York is the _______ city in the world`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `biggest`
+                    }, {
+                        isCorrect: false,
+                        answer: `bigger`
+                    }, {
+                        isCorrect: false,
+                        answer: `most big`
+                    }, {
+                        isCorrect: false,
+                        answer: `more big`
+                    }]
+                }, {
+                    question: `Choose the right variant\:________is an animal that can recognize its own image in a mirror`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `A cheetah`
+                    }, {
+                        isCorrect: false,
+                        answer: `A table`
+                    }, {
+                        isCorrect: false,
+                        answer: `An apple`
+                    }, {
+                        isCorrect: false,
+                        answer: `An ant`
+                    }]
+                }, {
+                    question: `Choose the right variant. This park is _______. There is no garbage here`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `clean`
+                    }, {
+                        isCorrect: false,
+                        answer: `ugly`
+                    }, {
+                        isCorrect: false,
+                        answer: `messy`
+                    }, {
+                        isCorrect: false,
+                        answer: `dirty`
+                    }]
+                }, {
+                    question: `Choose the right variant. A person who trains you or your team`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `coach`
+                    }, {
+                        isCorrect: false,
+                        answer: `an apponent`
+                    }, {
+                        isCorrect: false,
+                        answer: `an athlete`
+                    }, {
+                        isCorrect: false,
+                        answer: `a fan`
+                    }]
+                }, {
+                    question: `Choose the right variant. Where ________ usually go on your summer holidays?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `do you`
+                    }, {
+                        isCorrect: false,
+                        answer: `are you`
+                    }, {
+                        isCorrect: false,
+                        answer: `you do`
+                    }, {
+                        isCorrect: false,
+                        answer: `does you`
+                    }]
+                }, {
+                    question: `Choose the right variant. Everybody at age 11 goes to _______ school`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `secondary`
+                    }, {
+                        isCorrect: false,
+                        answer: `primary`
+                    }, {
+                        isCorrect: false,
+                        answer: `nursery`
+                    }, {
+                        isCorrect: false,
+                        answer: `basic`
+                    }]
+                }, {
+                    question: `Choose the right variant. If we want to find some information for our study, we_____ the Internet`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `surf`
+                    }, {
+                        isCorrect: false,
+                        answer: `look after`
+                    }, {
+                        isCorrect: false,
+                        answer: `watch`
+                    }, {
+                        isCorrect: false,
+                        answer: `see`
+                    }]
+                }, {
+                    question: `Choose the right variant\: The pyramids ______ built many centuries ago by Egyptians`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `were`
+                    }, {
+                        isCorrect: false,
+                        answer: `was`
+                    }, {
+                        isCorrect: false,
+                        answer: `are`
+                    }, {
+                        isCorrect: false,
+                        answer: `is`
+                    }]
+                }, {
+                    question: `Choose the right variant. The Mausoleum of Hoja Ahmed Yassawi is in _______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Turkestan`
+                    }, {
+                        isCorrect: false,
+                        answer: `Almaty`
+                    }, {
+                        isCorrect: false,
+                        answer: `Astana`
+                    }, {
+                        isCorrect: false,
+                        answer: `Taraz`
+                    }]
+                }, {
+                    question: `Choose the right variant\: I________ go to Japan`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `would like to`
+                    }, {
+                        isCorrect: false,
+                        answer: `play`
+                    }, {
+                        isCorrect: false,
+                        answer: `see`
+                    }, {
+                        isCorrect: false,
+                        answer: `have been`
+                    }]
+                }, {
+                    question: `Choose the right variant. Madina often ______ the guitar`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `plays`
+                    }, {
+                        isCorrect: false,
+                        answer: `was playing`
+                    }, {
+                        isCorrect: false,
+                        answer: `play`
+                    }, {
+                        isCorrect: false,
+                        answer: `were playing`
+                    }]
+                }, {
+                    question: `Choose the right variant. Mathematics, Physics, Chemistry are difficult ________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `subjects`
+                    }, {
+                        isCorrect: false,
+                        answer: `teachers`
+                    }, {
+                        isCorrect: false,
+                        answer: `rules`
+                    }, {
+                        isCorrect: false,
+                        answer: `uniforms`
+                    }]
+                }, {
+                    question: `Choose the right variant. Violent computer games make teenagers ________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `aggressive`
+                    }, {
+                        isCorrect: false,
+                        answer: `positive`
+                    }, {
+                        isCorrect: false,
+                        answer: `intelligent`
+                    }, {
+                        isCorrect: false,
+                        answer: `friendly`
+                    }]
+                }, {
+                    question: `Choose the right variant. Most children _____ in state schools`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `are educated`
+                    }, {
+                        isCorrect: false,
+                        answer: `be educated`
+                    }, {
+                        isCorrect: false,
+                        answer: `is educated`
+                    }, {
+                        isCorrect: false,
+                        answer: `was educated`
+                    }]
+                }, {
+                    question: `Choose the right variant. The Republic of Kazakhstan borders with Russian Federation, Turkmenistan, Uzbekistan, Kirgizstan and _____`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `China`
+                    }, {
+                        isCorrect: false,
+                        answer: `Turkey`
+                    }, {
+                        isCorrect: false,
+                        answer: `Iran`
+                    }, {
+                        isCorrect: false,
+                        answer: `India`
+                    }]
+                }, {
+                    question: `Choose the right variant. Cliff diving is a very exciting extreme _______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `sport`
+                    }, {
+                        isCorrect: false,
+                        answer: `sign`
+                    }, {
+                        isCorrect: false,
+                        answer: `meaning`
+                    }, {
+                        isCorrect: false,
+                        answer: `dance`
+                    }]
+                }, {
+                    question: `Choose the right variant. I have ______ friends. They are very special to me`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `a few`
+                    }, {
+                        isCorrect: false,
+                        answer: `any`
+                    }, {
+                        isCorrect: false,
+                        answer: `much`
+                    }, {
+                        isCorrect: false,
+                        answer: `little`
+                    }]
+                }, {
+                    question: `Choose the right variant. A pain you feel inside your head\:`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `headache`
+                    }, {
+                        isCorrect: false,
+                        answer: `cough`
+                    }, {
+                        isCorrect: false,
+                        answer: `recovery`
+                    }, {
+                        isCorrect: false,
+                        answer: `patient`
+                    }]
+                }, {
+                    question: `Choose the right variant\: It is_____ that makes me dance`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `music`
+                    }, {
+                        isCorrect: false,
+                        answer: `book`
+                    }, {
+                        isCorrect: false,
+                        answer: `food`
+                    }, {
+                        isCorrect: false,
+                        answer: `sport`
+                    }]
+                }, {
+                    question: `Choose the right variant. You _______ call your teachers by their first names`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `mustn’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `can to`
+                    }, {
+                        isCorrect: false,
+                        answer: `must to`
+                    }, {
+                        isCorrect: false,
+                        answer: `may to`
+                    }]
+                }, {
+                    question: `Choose the right variant. Granny didn’t want my Mom ______ my Dad`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `to marry`
+                    }, {
+                        isCorrect: false,
+                        answer: `marries`
+                    }, {
+                        isCorrect: false,
+                        answer: `married`
+                    }, {
+                        isCorrect: false,
+                        answer: `to be married`
+                    }]
+                }, {
+                    question: `Choose the right variant. _______ is good for trees and flowers`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `rain`
+                    }, {
+                        isCorrect: false,
+                        answer: `wind`
+                    }, {
+                        isCorrect: false,
+                        answer: `fog`
+                    }, {
+                        isCorrect: false,
+                        answer: `smog`
+                    }]
+                }, {
+                    question: `Choose the right variant. The Olympic sized ice stadium of Medeu is the biggest`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `World‘s top skaters come here to test their skills`
+                    }, {
+                        isCorrect: false,
+                        answer: `World‘s top footballers come here to test their skills`
+                    }, {
+                        isCorrect: false,
+                        answer: `World‘s top skiers come here to test their skills`
+                    }, {
+                        isCorrect: false,
+                        answer: `World‘s top snowboarders come here to test their skills`
+                    }]
+                }, {
+                    question: `Complete the sentence. When I have flu I _________________________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `drink much liquid`
+                    }, {
+                        isCorrect: false,
+                        answer: `make an operation`
+                    }, {
+                        isCorrect: false,
+                        answer: `take a photo`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn’t do anything`
+                    }]
+                }, {
+                    question: `Choose the right variant\: Singing is one of the most pleasant _______ activities`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `leisure`
+                    }, {
+                        isCorrect: false,
+                        answer: `sport`
+                    }, {
+                        isCorrect: false,
+                        answer: `shopping`
+                    }, {
+                        isCorrect: false,
+                        answer: `matter`
+                    }]
+                }, {
+                    question: `Choose the right variant. You _____ to attend extra classes, it’s up to you`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `don’t have`
+                    }, {
+                        isCorrect: false,
+                        answer: `must to`
+                    }, {
+                        isCorrect: false,
+                        answer: `may to`
+                    }, {
+                        isCorrect: false,
+                        answer: `can to`
+                    }]
+                }, {
+                    question: `Choose the right variant. Mrs. Pottson allowed her guests ______ in the living room`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `to smoke`
+                    }, {
+                        isCorrect: false,
+                        answer: `smoke to`
+                    }, {
+                        isCorrect: false,
+                        answer: `smoke`
+                    }, {
+                        isCorrect: false,
+                        answer: `smoked`
+                    }]
+                }, {
+                    question: `Choose the right variant. Everything is ______in spring`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `blossoming`
+                    }, {
+                        isCorrect: false,
+                        answer: `cooking`
+                    }, {
+                        isCorrect: false,
+                        answer: `going`
+                    }, {
+                        isCorrect: false,
+                        answer: `reading`
+                    }]
+                }, {
+                    question: `Choose the right variant. Café is the place where…`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `you can buy a cup of coffee and cakes or sandwiches`
+                    }, {
+                        isCorrect: false,
+                        answer: `you can do exercises, weight training and keep fit here`
+                    }, {
+                        isCorrect: false,
+                        answer: `you can buy clothes, household appliances in sections`
+                    }, {
+                        isCorrect: false,
+                        answer: `you can see the latest movies here`
+                    }]
+                }, {
+                    question: `Choose the right variant. My diet is unhealthy. I eat too ________ cakes and sweets`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `many`
+                    }, {
+                        isCorrect: false,
+                        answer: `much`
+                    }, {
+                        isCorrect: false,
+                        answer: `enough`
+                    }, {
+                        isCorrect: false,
+                        answer: `-`
+                    }]
+                }, {
+                    question: `Complete the question. How much ____ do you drink?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Water`
+                    }, {
+                        isCorrect: false,
+                        answer: `Porridge`
+                    }, {
+                        isCorrect: false,
+                        answer: `Shack`
+                    }, {
+                        isCorrect: false,
+                        answer: `Vegetable`
+                    }]
+                }, {
+                    question: `Choose the right variant. If they were Koreans, they _____ Chinese`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `wouldn't speak`
+                    }, {
+                        isCorrect: false,
+                        answer: `wouldn't have spoken`
+                    }, {
+                        isCorrect: false,
+                        answer: `wouldn't spoke`
+                    }, {
+                        isCorrect: false,
+                        answer: `will not speak`
+                    }]
+                }, {
+                    question: `Choose the right variant\: I __________ take him on holiday with me`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `always`
+                    }, {
+                        isCorrect: false,
+                        answer: `all days`
+                    }, {
+                        isCorrect: false,
+                        answer: `last week`
+                    }, {
+                        isCorrect: false,
+                        answer: `yesterday`
+                    }]
+                }, {
+                    question: `Choose the right variant. Students _____ when they finish the course and pass the final exams`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `get a degree`
+                    }, {
+                        isCorrect: false,
+                        answer: `get a book`
+                    }, {
+                        isCorrect: false,
+                        answer: `get a salary`
+                    }, {
+                        isCorrect: false,
+                        answer: `get tasks`
+                    }]
+                }, {
+                    question: `Choose the right variant. I have never _____ windsurfing. I can’t swim`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `practiced`
+                    }, {
+                        isCorrect: false,
+                        answer: `been`
+                    }, {
+                        isCorrect: false,
+                        answer: `played`
+                    }, {
+                        isCorrect: false,
+                        answer: `taken`
+                    }]
+                }, {
+                    question: `Choose the right variant. They grew up in _______ house in Mexico City`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `a little, comfortable`
+                    }, {
+                        isCorrect: false,
+                        answer: `a comfortable, little in`
+                    }, {
+                        isCorrect: false,
+                        answer: `a comfortable a little`
+                    }, {
+                        isCorrect: false,
+                        answer: `little a comfortable`
+                    }]
+                }, {
+                    question: `Put the words in the correct order to make question. lesson are going what after you to do the?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `What are you going to do after the lesson?`
+                    }, {
+                        isCorrect: false,
+                        answer: `What you are going to do after the lesson?`
+                    }, {
+                        isCorrect: false,
+                        answer: `What after the lesson are you going to do?`
+                    }, {
+                        isCorrect: false,
+                        answer: `What are you the lesson going to do after?`
+                    }]
+                }, {
+                    question: `Choose the right variant. I don‘t do _________exercise. I need to do more`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `enough`
+                    }, {
+                        isCorrect: false,
+                        answer: `many`
+                    }, {
+                        isCorrect: false,
+                        answer: `too`
+                    }, {
+                        isCorrect: false,
+                        answer: `too many`
+                    }]
+                }, {
+                    question: `Choose the right variant\: I get on well with my parents. We _________ have arguments`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `never`
+                    }, {
+                        isCorrect: false,
+                        answer: `ever`
+                    }, {
+                        isCorrect: false,
+                        answer: `forever`
+                    }, {
+                        isCorrect: false,
+                        answer: `however`
+                    }]
+                }, {
+                    question: `Choose the right variant. Some pupils take a gap year before they go to ________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `university`
+                    }, {
+                        isCorrect: false,
+                        answer: `city center`
+                    }, {
+                        isCorrect: false,
+                        answer: `park`
+                    }, {
+                        isCorrect: false,
+                        answer: `hospital`
+                    }]
+                }, {
+                    question: `Choose the right variant. The children ___________ in the pool for over an hour`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `have been`
+                    }, {
+                        isCorrect: false,
+                        answer: `Were`
+                    }, {
+                        isCorrect: false,
+                        answer: `Haves been`
+                    }, {
+                        isCorrect: false,
+                        answer: `Was`
+                    }]
+                }, {
+                    question: `Choose the right variant. We didn’t go out because it was raining _______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `heavily`
+                    }, {
+                        isCorrect: false,
+                        answer: `to heavy`
+                    }, {
+                        isCorrect: false,
+                        answer: `heavier`
+                    }, {
+                        isCorrect: false,
+                        answer: `more heavy`
+                    }]
+                }, {
+                    question: `Choose the right variant`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Heathrow is the busiest International airport in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `Heathrow is the busier International airport in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `Heathrow is most busy International airport in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `Heathrow is the more busiest International airport in the world`
+                    }]
+                }, {
+                    question: `Write a sentence with ever. he / unfriendly person / I / meet`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `He is the most unfriendly person I have ever met`
+                    }, {
+                        isCorrect: false,
+                        answer: `he mostest unfriendly person I ever meet`
+                    }, {
+                        isCorrect: false,
+                        answer: `the mostest unfriendly person meet`
+                    }, {
+                        isCorrect: false,
+                        answer: `most unfriendly I ever meet`
+                    }]
+                }, {
+                    question: `Choose the right variant. If we use solar panels, we _____ the energy`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `will save`
+                    }, {
+                        isCorrect: false,
+                        answer: `doesn't save`
+                    }, {
+                        isCorrect: false,
+                        answer: `wouldn't save`
+                    }, {
+                        isCorrect: false,
+                        answer: `didn't save`
+                    }]
+                }, {
+                    question: `Choose the right variant. He knew a man ______ works on TV`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `who`
+                    }, {
+                        isCorrect: false,
+                        answer: `where`
+                    }, {
+                        isCorrect: false,
+                        answer: `when`
+                    }, {
+                        isCorrect: false,
+                        answer: `which`
+                    }]
+                }, {
+                    question: `Choose the right variant. Kelly decided _______ a diving course`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `to do`
+                    }, {
+                        isCorrect: false,
+                        answer: `to make`
+                    }, {
+                        isCorrect: false,
+                        answer: `to play`
+                    }, {
+                        isCorrect: false,
+                        answer: `to spend`
+                    }]
+                }, {
+                    question: `Choose the right variant. I______ go to the party. I have a terrible headache`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `might not`
+                    }, {
+                        isCorrect: false,
+                        answer: `should`
+                    }, {
+                        isCorrect: false,
+                        answer: `had to`
+                    }, {
+                        isCorrect: false,
+                        answer: `can`
+                    }]
+                }, {
+                    question: `Choose the right variant. I enjoy _______ in bed`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `reading`
+                    }, {
+                        isCorrect: false,
+                        answer: `to reading`
+                    }, {
+                        isCorrect: false,
+                        answer: `to have read`
+                    }, {
+                        isCorrect: false,
+                        answer: `read to`
+                    }]
+                }, {
+                    question: `Choose the right variant. The air in many towns and cities is being polluted by ______`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `traffic and industry`
+                    }, {
+                        isCorrect: false,
+                        answer: `rain and snow`
+                    }, {
+                        isCorrect: false,
+                        answer: `bicycles`
+                    }, {
+                        isCorrect: false,
+                        answer: `animals`
+                    }]
+                }, {
+                    question: `Choose the right variant. What is the bad side of watching TV?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `It can affect children‘s health, behavior and family life in negative ways`
+                    }, {
+                        isCorrect: false,
+                        answer: `It extends our knowledge about the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `A lot of people love watching TV`
+                    }, {
+                        isCorrect: false,
+                        answer: `Sport fans can watch football or hockey matches`
+                    }]
+                }, {
+                    question: `Choose the right variant. Eiffel Tower ______in 1889, in Paris`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `was built`
+                    }, {
+                        isCorrect: false,
+                        answer: `was taken`
+                    }, {
+                        isCorrect: false,
+                        answer: `was gone`
+                    }, {
+                        isCorrect: false,
+                        answer: `was spoken`
+                    }]
+                }, {
+                    question: `Choose the right variant. We went to the __________last day and sunbathed`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `beach`
+                    }, {
+                        isCorrect: false,
+                        answer: `pub`
+                    }, {
+                        isCorrect: false,
+                        answer: `restaurant`
+                    }, {
+                        isCorrect: false,
+                        answer: `hospital`
+                    }]
+                }, {
+                    question: `Choose the right variant. You _____ vote until you are eighteen`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `can’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `could`
+                    }, {
+                        isCorrect: false,
+                        answer: `had to`
+                    }, {
+                        isCorrect: false,
+                        answer: `has to`
+                    }]
+                }, {
+                    question: `Choose the right variant. I hate ____ early in the morning`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `getting up`
+                    }, {
+                        isCorrect: false,
+                        answer: `get to up`
+                    }, {
+                        isCorrect: false,
+                        answer: `to got up`
+                    }, {
+                        isCorrect: false,
+                        answer: `gets up`
+                    }]
+                }, {
+                    question: `Choose the right variant. Find out the odd word`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `voyage`
+                    }, {
+                        isCorrect: false,
+                        answer: `air pollution`
+                    }, {
+                        isCorrect: false,
+                        answer: `environment`
+                    }, {
+                        isCorrect: false,
+                        answer: `recycle`
+                    }]
+                }, {
+                    question: `Choose the right variant. I‘ll always love you`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `promise`
+                    }, {
+                        isCorrect: false,
+                        answer: `decision`
+                    }, {
+                        isCorrect: false,
+                        answer: `asking`
+                    }, {
+                        isCorrect: false,
+                        answer: `request`
+                    }]
+                }, {
+                    question: `Choose the right variant\: What is the population of Kazakhstan?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `20 million people`
+                    }, {
+                        isCorrect: false,
+                        answer: `8million people`
+                    }, {
+                        isCorrect: false,
+                        answer: `88million people`
+                    }, {
+                        isCorrect: false,
+                        answer: `28million over living here`
+                    }]
+                }, {
+                    question: `Give the synonym to the word “rubbish”`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `garbage`
+                    }, {
+                        isCorrect: false,
+                        answer: `pollution`
+                    }, {
+                        isCorrect: false,
+                        answer: `lack of rain`
+                    }, {
+                        isCorrect: false,
+                        answer: `take after`
+                    }]
+                }, {
+                    question: `Choose the right variant. Find out the odd word`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `A coat`
+                    }, {
+                        isCorrect: false,
+                        answer: `A cheetah`
+                    }, {
+                        isCorrect: false,
+                        answer: `An elephant`
+                    }, {
+                        isCorrect: false,
+                        answer: `A giraffe`
+                    }]
+                }, {
+                    question: `Choose the right variant. He didn’t _____ to come to France with us`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `want`
+                    }, {
+                        isCorrect: false,
+                        answer: `wanted`
+                    }, {
+                        isCorrect: false,
+                        answer: `to want`
+                    }, {
+                        isCorrect: false,
+                        answer: `wanting`
+                    }]
+                }, {
+                    question: `Choose the right variant. Many people go to England to _____ their English`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `practice`
+                    }, {
+                        isCorrect: false,
+                        answer: `lend`
+                    }, {
+                        isCorrect: false,
+                        answer: `find`
+                    }, {
+                        isCorrect: false,
+                        answer: `make`
+                    }]
+                }, {
+                    question: `Choose the right variant. I _____ a lot of football when I was a child. Now I just watch it on TV`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `played`
+                    }, {
+                        isCorrect: false,
+                        answer: `practised`
+                    }, {
+                        isCorrect: false,
+                        answer: `took`
+                    }, {
+                        isCorrect: false,
+                        answer: `made`
+                    }]
+                }, {
+                    question: `Choose the right variant. You______ more, if you come to every class`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `‘ll learn`
+                    }, {
+                        isCorrect: false,
+                        answer: `learns`
+                    }, {
+                        isCorrect: false,
+                        answer: `‘ll buy`
+                    }, {
+                        isCorrect: false,
+                        answer: `learnt`
+                    }]
+                }, {
+                    question: `Choose the right variant. They cut your hair or give it a new style`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `hairdresser`
+                    }, {
+                        isCorrect: false,
+                        answer: `journalist`
+                    }, {
+                        isCorrect: false,
+                        answer: `lawyer`
+                    }, {
+                        isCorrect: false,
+                        answer: `mechanic`
+                    }]
+                }, {
+                    question: `Choose the right variant\: What is the symbol of Astana?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Baiterek is the symbol of Astana`
+                    }, {
+                        isCorrect: false,
+                        answer: `Mega is the symbol of Astana`
+                    }, {
+                        isCorrect: false,
+                        answer: `Akkorda Is the symbol of Astana`
+                    }, {
+                        isCorrect: false,
+                        answer: `Khan Shatyr is the symbol of Astana`
+                    }]
+                }, {
+                    question: `Choose the right variant. My parents ______ a lovely house on the beach, and I enjoyed it very much`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `rented`
+                    }, {
+                        isCorrect: false,
+                        answer: `to rent`
+                    }, {
+                        isCorrect: false,
+                        answer: `rents`
+                    }, {
+                        isCorrect: false,
+                        answer: `renting`
+                    }]
+                }, {
+                    question: `Choose the right variant. English grammar is very ________. One should work hard at it`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `complicated`
+                    }, {
+                        isCorrect: false,
+                        answer: `different`
+                    }, {
+                        isCorrect: false,
+                        answer: `easy`
+                    }, {
+                        isCorrect: false,
+                        answer: `typical`
+                    }]
+                }, {
+                    question: `Choose the right variant. Manchester United _____ their first goal`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `scored`
+                    }, {
+                        isCorrect: false,
+                        answer: `picked`
+                    }, {
+                        isCorrect: false,
+                        answer: `pushed`
+                    }, {
+                        isCorrect: false,
+                        answer: `failed`
+                    }]
+                }, {
+                    question: `Choose the right variant. She ______ in London if she _____ a job`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `’ll stay, gets`
+                    }, {
+                        isCorrect: false,
+                        answer: `would stay, get`
+                    }, {
+                        isCorrect: false,
+                        answer: `stayed, will get`
+                    }, {
+                        isCorrect: false,
+                        answer: `stayed, get`
+                    }]
+                }, {
+                    question: `Choose the right variant. She‘s never learned _____________`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `a foreign language`
+                    }, {
+                        isCorrect: false,
+                        answer: `to the shopping centre`
+                    }, {
+                        isCorrect: false,
+                        answer: `clothes from that shop`
+                    }, {
+                        isCorrect: false,
+                        answer: `sushi`
+                    }]
+                }, {
+                    question: `Complete the sentence with a superlative. It‘s _____________ city in the world. (polluted)`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `the most polluted city in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `It‘s the pollutest city in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `It‘s polluted city in the world`
+                    }, {
+                        isCorrect: false,
+                        answer: `It‘s is polluted city in the world`
+                    }]
+                }, {
+                    question: `Choose the right variant. Nick and Mike _______ at the park yesterday`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `weren't`
+                    }, {
+                        isCorrect: false,
+                        answer: `wasn't`
+                    }, {
+                        isCorrect: false,
+                        answer: `didn't be`
+                    }, {
+                        isCorrect: false,
+                        answer: `didn’t`
+                    }]
+                }, {
+                    question: `Choose the right variant. You ______ drive a car without a seat belt`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `Mustn't`
+                    }, {
+                        isCorrect: false,
+                        answer: `May`
+                    }, {
+                        isCorrect: false,
+                        answer: `Should`
+                    }, {
+                        isCorrect: false,
+                        answer: `Can`
+                    }]
+                }, {
+                    question: `Give the synonym of the word “interesting”. There are many interesting places in our city`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `exciting`
+                    }, {
+                        isCorrect: false,
+                        answer: `boring`
+                    }, {
+                        isCorrect: false,
+                        answer: `polluted`
+                    }, {
+                        isCorrect: false,
+                        answer: `old`
+                    }]
+                }, {
+                    question: `Choose the right variant. I saw the horse jumping _________ the fence`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `over`
+                    }, {
+                        isCorrect: false,
+                        answer: `on`
+                    }, {
+                        isCorrect: false,
+                        answer: `in`
+                    }, {
+                        isCorrect: false,
+                        answer: `to`
+                    }]
+                }, {
+                    question: `Choose the right variant. I’m in favour of ______ wild animals`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `protecting`
+                    }, {
+                        isCorrect: false,
+                        answer: `destroying`
+                    }, {
+                        isCorrect: false,
+                        answer: `hurting`
+                    }, {
+                        isCorrect: false,
+                        answer: `killing`
+                    }]
+                }, {
+                    question: `Choose the right variant. Have you worked in a bank?`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `No, I haven’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `Yes, I do`
+                    }, {
+                        isCorrect: false,
+                        answer: `No, I don’t`
+                    }, {
+                        isCorrect: false,
+                        answer: `Yes, he has`
+                    }]
+                }, {
+                    question: `Lucy\: _ do you usually go for lunch? Jake\: Around 12\:30`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `When`
+                    }, {
+                        isCorrect: false,
+                        answer: `Where`
+                    }, {
+                        isCorrect: false,
+                        answer: `What`
+                    }, {
+                        isCorrect: false,
+                        answer: `How`
+                    }]
+                }, {
+                    question: `Choose the right variant. The place where you can see pictures and paintings`,
+                    answers: [{
+                        isCorrect: true,
+                        answer: `a gallery`
+                    }, {
+                        isCorrect: false,
+                        answer: `a cinema`
+                    }, {
+                        isCorrect: false,
+                        answer: `a library`
+                    }, {
+                        isCorrect: false,
+                        answer: `a theatre`
+                    }]
+                }],
+            },
+            methods: {
+                getTestArrays() {
+                    this.splitedTest = [];
+                    this.splitedTestResults = [];
+                    let copyTestArray = [];
+                    if(this.questionsRandom){
+                        copyTestArray = this.shuffle();
+                    }else{
+                        copyTestArray = JSON.parse(JSON.stringify(this.test));
+                    }
+                    if(this.answersRandom){
+                        copyTestArray = copyTestArray.map(item => {
+                            let newitem = item;
+                            newitem.answers = this.shuffleCurrent(item.answers);
+                            return newitem;
+                        })
+                    }
+                    let size = +this.splitCounts; //размер подмассива
+                    for (let i = 0; i <Math.ceil(copyTestArray.length/size); i++){
+                        this.splitedTest[i] = copyTestArray.slice((i*size), (i*size) + size);
+                        this.splitedTestResults[i] = [];
+                    }
+                },
+                shuffle() {
+                    let newArray = JSON.parse(JSON.stringify(this.test));
+                    for (let i = newArray.length - 1; i > 0; i--) {
+                        let j = Math.floor(Math.random() * (i + 1));
+                        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                    }
+                    return newArray;
+                },
+                startTest(){
+                    this.getTestArrays();
+                    this.cuttentTab = 'TestPreview';
+                },
+                showTest(index){
+                    this.selectedTest = +index;
+                    this.currentAnswer = 0;
+                    this.answerSelectedIndex = null;
+                    this.questionPassed = false;
+                    this.cuttentTab = 'Test';
+                },
+                addAnswer(question, answer, isCorrect, answers, answerIndex){
+                    this.splitedTestResults[this.selectedTest].push({
+                        question,
+                        answer,
+                        isCorrect,
+                        answers,
+                    });
+                    this.questionPassed = true;
+                    this.answerSelectedIndex = answerIndex;
+                },
+                backToMenu(){
+                    this.cuttentTab = 'TestPreview';
+                },
+                nextQuest(){
+                    this.questionPassed = false;
+                    this.answerSelectedIndex = null;
+                    this.currentAnswer++;
+                },
+                showResultsCount(array){
+                    let count = 0;
+                    array.forEach(item => {
+                        if(item.isCorrect){
+                            count++;
+                        }
+                    });
+                    return count;
+                },
+                showTestResults(index){
+                    this.showResultsTestNum = index;
+                    this.cuttentTab = 'ResultTest';
+                },
+                shuffleCurrent(array) {
+                    let newArray = JSON.parse(JSON.stringify(array));
+                    for (let i = newArray.length - 1; i > 0; i--) {
+                        let j = Math.floor(Math.random() * (i + 1));
+                        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                    }
+                    return newArray;
+                },
+            }
+        })
+    </script>
+</body>
+</html>
